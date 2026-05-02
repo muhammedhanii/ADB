@@ -22,7 +22,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
     try {
       const response = await fetch(`${apiBaseUrl}/recipes`);
       if (!response.ok) {
-        throw new Error("Failed to load recipes.");
+        throw new Error(`Failed to load recipes (${response.status}).`);
       }
       const data = await response.json();
       setRecipes(data);
@@ -133,7 +133,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
       });
 
       if (!response.ok) {
-        throw new Error("Unable to create recipe.");
+        throw new Error(`Unable to create recipe (${response.status}).`);
       }
 
       setForm(emptyForm);
@@ -151,7 +151,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
         method: "DELETE",
       });
       if (!response.ok) {
-        throw new Error("Unable to delete recipe.");
+        throw new Error(`Unable to delete recipe (${response.status}).`);
       }
       setStatus({ type: "success", message: "Recipe deleted." });
       await fetchRecipes();
