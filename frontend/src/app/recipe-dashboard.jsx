@@ -111,13 +111,14 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
     window.addEventListener("resize", resizeRenderer);
 
     let frameId;
-    const animate = () => {
+    const animate = (time) => {
+      const t = time * 0.001;
       bookGroup.rotation.y += 0.005;
-      bookGroup.rotation.x = 0.12 + Math.sin(Date.now() * 0.0012) * 0.04;
+      bookGroup.rotation.x = 0.12 + Math.sin(t * 1.2) * 0.04;
       renderer.render(scene, camera);
       frameId = window.requestAnimationFrame(animate);
     };
-    animate();
+    animate(0);
 
     return () => {
       window.cancelAnimationFrame(frameId);
@@ -168,7 +169,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
     return ingredients
       .map((ingredient) =>
         [ingredient.name, ingredient.quantity, ingredient.unit]
-          .filter((value) => value && value.trim())
+          .filter((value) => value && String(value).trim())
           .join(" | ")
       )
       .join("\n");
