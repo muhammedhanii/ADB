@@ -16,6 +16,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
   const [recipes, setRecipes] = useState(initialRecipes);
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState({ type: "idle", message: "" });
+  const [editingId, setEditingId] = useState(null);
   const canvasRef = useRef(null);
 
   const fetchRecipes = async () => {
@@ -39,22 +40,65 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#0f0f12");
-    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    camera.position.z = 2.6;
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+    camera.position.set(0.3, 0.2, 3.1);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: "#ff9248" });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    const bookGroup = new THREE.Group();
 
-    const keyLight = new THREE.DirectionalLight("#ffffff", 1);
-    keyLight.position.set(2, 2, 3);
+    const coverGeometry = new THREE.BoxGeometry(1.6, 1.1, 0.22);
+    const coverMaterial = new THREE.MeshStandardMaterial({
+      color: "#e85d42",
+      metalness: 0.2,
+      roughness: 0.45,
+    });
+    const cover = new THREE.Mesh(coverGeometry, coverMaterial);
+    bookGroup.add(cover);
+
+    const pagesGeometry = new THREE.BoxGeometry(1.46, 0.98, 0.14);
+    const pagesMaterial = new THREE.MeshStandardMaterial({
+      color: "#f5efe6",
+      roughness: 0.9,
+    });
+    const pages = new THREE.Mesh(pagesGeometry, pagesMaterial);
+    pages.position.z = 0.02;
+    bookGroup.add(pages);
+
+    const spineGeometry = new THREE.BoxGeometry(0.22, 1.06, 0.24);
+    const spineMaterial = new THREE.MeshStandardMaterial({
+      color: "#8a3b2f",
+      roughness: 0.6,
+    });
+    const spine = new THREE.Mesh(spineGeometry, spineMaterial);
+    spine.position.x = -0.69;
+    bookGroup.add(spine);
+
+    const ribbonGeometry = new THREE.BoxGeometry(0.04, 0.75, 0.02);
+    const ribbonMaterial = new THREE.MeshStandardMaterial({
+      color: "#ffb86b",
+      roughness: 0.4,
+    });
+    const ribbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+    ribbon.position.set(0.5, -0.05, 0.11);
+    bookGroup.add(ribbon);
+
+    bookGroup.rotation.y = -0.4;
+    bookGroup.rotation.x = 0.15;
+    scene.add(bookGroup);
+
+    const keyLight = new THREE.DirectionalLight("#ffffff", 1.2);
+    keyLight.position.set(3, 2.5, 4);
     scene.add(keyLight);
-    scene.add(new THREE.AmbientLight("#ffffff", 0.4));
+
+    const fillLight = new THREE.DirectionalLight("#ffd7b1", 0.6);
+    fillLight.position.set(-2, 1.5, 2);
+    scene.add(fillLight);
+
+    scene.add(new THREE.AmbientLight("#ffffff", 0.35));
 
     const resizeRenderer = () => {
       const { width, height } = container.getBoundingClientRect();
@@ -68,8 +112,8 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
 
     let frameId;
     const animate = () => {
-      cube.rotation.x += 0.008;
-      cube.rotation.y += 0.012;
+      bookGroup.rotation.y += 0.005;
+      bookGroup.rotation.x = 0.12 + Math.sin(Date.now() * 0.0012) * 0.04;
       renderer.render(scene, camera);
       frameId = window.requestAnimationFrame(animate);
     };
@@ -78,8 +122,14 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
     return () => {
       window.cancelAnimationFrame(frameId);
       window.removeEventListener("resize", resizeRenderer);
-      geometry.dispose();
-      material.dispose();
+      coverGeometry.dispose();
+      coverMaterial.dispose();
+      pagesGeometry.dispose();
+      pagesMaterial.dispose();
+      spineGeometry.dispose();
+      spineMaterial.dispose();
+      ribbonGeometry.dispose();
+      ribbonMaterial.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -110,6 +160,27 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
       .map((line) => line.trim())
       .filter(Boolean);
 
+  const formatIngredients = (ingredients) => {
+    if (!Array.isArray(ingredients)) {
+      return "";
+    }
+
+    return ingredients
+      .map((ingredient) =>
+        [ingredient.name, ingredient.quantity, ingredient.unit]
+          .filter((value) => value && value.trim())
+          .join(" | ")
+      )
+      .join("\n");
+  };
+
+  const formatInstructions = (instructions) => {
+    if (!Array.isArray(instructions)) {
+      return "";
+    }
+    return instructions.filter(Boolean).join("\n");
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((previous) => ({ ...previous, [name]: value }));
@@ -117,7 +188,11 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setStatus({ type: "loading", message: "Saving recipe..." });
+    const isEditing = Boolean(editingId);
+    setStatus({
+      type: "loading",
+      message: isEditing ? "Updating recipe..." : "Saving recipe...",
+    });
 
     try {
       const payload = {
@@ -128,22 +203,49 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
         instructions: parseInstructions(form.instructions),
       };
 
-      const response = await fetch(`${apiBaseUrl}/recipes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        isEditing ? `${apiBaseUrl}/recipes/${editingId}` : `${apiBaseUrl}/recipes`,
+        {
+          method: isEditing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Unable to create recipe (${response.status}).`);
+        throw new Error(
+          `Unable to ${isEditing ? "update" : "create"} recipe (${response.status}).`
+        );
       }
 
       setForm(emptyForm);
-      setStatus({ type: "success", message: "Recipe saved." });
+      setEditingId(null);
+      setStatus({
+        type: "success",
+        message: isEditing ? "Recipe updated." : "Recipe saved.",
+      });
       await fetchRecipes();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     }
+  };
+
+  const handleEdit = (recipe) => {
+    setEditingId(recipe._id);
+    setForm({
+      title: recipe.title || "",
+      description: recipe.description || "",
+      category: recipe.category || "",
+      ingredients: formatIngredients(recipe.ingredients),
+      instructions: formatInstructions(recipe.instructions),
+    });
+    setStatus({ type: "idle", message: "" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setStatus({ type: "idle", message: "" });
   };
 
   const handleDelete = async (id) => {
@@ -183,7 +285,7 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
 
       <main className={styles.main}>
         <section className={styles.formCard}>
-          <h2>Add a recipe</h2>
+          <h2>{editingId ? "Edit recipe" : "Add a recipe"}</h2>
           <form onSubmit={handleSubmit} className={styles.form}>
             <label>
               Title
@@ -234,9 +336,20 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
                 rows={4}
               />
             </label>
-            <button type="submit" className={styles.primaryButton}>
-              Save Recipe
-            </button>
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.primaryButton}>
+                {editingId ? "Update Recipe" : "Save Recipe"}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
             {status.message && (
               <p className={`${styles.status} ${styles[status.type]}`}>
                 {status.message}
@@ -268,13 +381,22 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => handleDelete(recipe._id)}
-                >
-                  Delete
-                </button>
+                <div className={styles.recipeActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => handleEdit(recipe)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => handleDelete(recipe._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </article>
             ))}
           </div>
