@@ -34,21 +34,21 @@ const loadSampleRecipes = async () => {
   }
 };
 
-const isSeedingDisabled = () => {
+const isSeedingEnabled = () => {
   const rawValue = process.env.SEED_SAMPLE_DATA;
   if (rawValue === undefined) {
-    return false;
+    return true;
   }
 
   const normalized = rawValue.trim().toLowerCase();
   if (!normalized) {
-    return false;
+    return true;
   }
-  return ["false", "0", "no", "off"].includes(normalized);
+  return !["false", "0", "no", "off"].includes(normalized);
 };
 
 const seedRecipesIfEmpty = async () => {
-  if (isSeedingDisabled()) {
+  if (!isSeedingEnabled()) {
     return { seeded: false, reason: "disabled" };
   }
 
