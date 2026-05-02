@@ -1,0 +1,19 @@
+[
+  {
+    "title": "Spicy Chicken Curry",
+    "description": "A rich and aromatic curry with tender chicken pieces.",
+    "category": "Dinner",
+    "ingredients": [
+      { "name": "Chicken", "quantity": "500", "unit": "g" },
+      { "name": "Onion", "quantity": "1", "unit": "pc" },
+      { "name": "Tomato", "quantity": "2", "unit": "pcs" },
+      { "name": "Curry Powder", "quantity": "2", "unit": "tbsp" }
+    ],
+    "instructions": [
+      "Heat oil in a pan.",
+      "Sauté onions until golden.",
+      "Add tomatoes and spices; cook well.",
+      "Add chicken and simmer until done."
+    ]
+  }
+]
