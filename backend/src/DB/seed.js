@@ -8,12 +8,18 @@ const sampleDataPath = path.resolve(
 );
 
 const loadSampleRecipes = async () => {
-  const raw = await fs.readFile(sampleDataPath, "utf8");
-  const data = JSON.parse(raw);
-  if (!Array.isArray(data)) {
-    throw new Error("Sample data file must contain an array of recipes.");
+  try {
+    const raw = await fs.readFile(sampleDataPath, "utf8");
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) {
+      throw new Error("Sample data file must contain an array of recipes.");
+    }
+    return data;
+  } catch (error) {
+    throw new Error(
+      `Unable to read sample data from ${sampleDataPath}: ${error.message}`
+    );
   }
-  return data;
 };
 
 const seedRecipesIfEmpty = async () => {
