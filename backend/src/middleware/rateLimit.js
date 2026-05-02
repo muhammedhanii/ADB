@@ -6,6 +6,6 @@ const max = Number(process.env.RATE_LIMIT_MAX) || 60;
 module.exports = rateLimit({
   windowMs,
   max,
-  standardHeaders: "draft-7",
+  standardHeaders: true,
   legacyHeaders: false,
 });
