@@ -22,12 +22,21 @@ const loadSampleRecipes = async () => {
   }
 };
 
+const isSeedingDisabled = () => {
+  if (process.env.SEED_SAMPLE_DATA === undefined) {
+    return false;
+  }
+
+  const normalized = process.env.SEED_SAMPLE_DATA.trim().toLowerCase();
+  return ["false", "0", "no", "off"].includes(normalized);
+};
+
 const seedRecipesIfEmpty = async () => {
-  if (process.env.SEED_SAMPLE_DATA === "false") {
+  if (isSeedingDisabled()) {
     return { seeded: false, reason: "disabled" };
   }
 
-  const existingCount = await Recipe.estimatedDocumentCount();
+  const existingCount = await Recipe.countDocuments();
   if (existingCount > 0) {
     return { seeded: false, reason: "already-populated", existingCount };
   }
