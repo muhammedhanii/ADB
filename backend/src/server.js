@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const recipeRoutes = require("./routes/recipeRoutes");
 const { connectToDatabase } = require("./DB/connection");
+const { seedRecipesIfEmpty } = require("./DB/seed");
 
 dotenv.config();
 
@@ -25,8 +26,24 @@ app.use((req, res) => {
 });
 
 connectToDatabase(MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("MongoDB connected.");
+    try {
+      const result = await seedRecipesIfEmpty();
+      if (result.seeded) {
+        console.log(`Seeded ${result.count} sample recipes.`);
+      } else if (result.reason === "disabled") {
+        console.log("Sample recipe seeding disabled by SEED_SAMPLE_DATA.");
+      } else if (result.reason === "already-populated") {
+        console.log(
+          `Skipping sample seed; ${result.existingCount} recipes already exist.`
+        );
+      } else if (result.reason === "empty-sample") {
+        console.log("Sample data file is empty; skipping seed.");
+      }
+    } catch (error) {
+      console.error("Failed to seed sample recipes:", error);
+    }
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}.`);
     });
