@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const recipeRoutes = require("./routes/recipeRoutes");
 const { connectToDatabase } = require("./DB/connection");
+const { seedRecipesIfEmpty } = require("./DB/seed");
 
 dotenv.config();
 
@@ -25,8 +26,16 @@ app.use((req, res) => {
 });
 
 connectToDatabase(MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("MongoDB connected.");
+    try {
+      const result = await seedRecipesIfEmpty();
+      if (result.seeded) {
+        console.log(`Seeded ${result.count} sample recipes.`);
+      }
+    } catch (error) {
+      console.error("Failed to seed sample recipes:", error.message);
+    }
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}.`);
     });
