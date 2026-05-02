@@ -16,8 +16,20 @@ const loadSampleRecipes = async () => {
     }
     return data;
   } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error(`Sample data file not found at ${sampleDataPath}.`, {
+        cause: error,
+      });
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(
+        `Sample data file contains invalid JSON: ${error.message}`,
+        { cause: error }
+      );
+    }
     throw new Error(
-      `Unable to read sample data from ${sampleDataPath}: ${error.message}`
+      `Unable to read sample data from ${sampleDataPath}: ${error.message}`,
+      { cause: error }
     );
   }
 };

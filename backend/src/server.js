@@ -32,6 +32,14 @@ connectToDatabase(MONGO_URI)
       const result = await seedRecipesIfEmpty();
       if (result.seeded) {
         console.log(`Seeded ${result.count} sample recipes.`);
+      } else if (result.reason === "disabled") {
+        console.log("Sample recipe seeding disabled by SEED_SAMPLE_DATA.");
+      } else if (result.reason === "already-populated") {
+        console.log(
+          `Skipping sample seed; ${result.existingCount} recipes already exist.`
+        );
+      } else if (result.reason === "empty-sample") {
+        console.log("Sample data file is empty; skipping seed.");
       }
     } catch (error) {
       console.error("Failed to seed sample recipes:", error);
