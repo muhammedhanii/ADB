@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require("../middleware/rateLimit");
 const {
   listRecipes,
   getRecipe,
@@ -8,6 +9,8 @@ const {
 } = require("../controllers/recipeController");
 
 const router = express.Router();
+
+router.use(rateLimit);
 
 router.get("/", listRecipes);
 router.get("/:id", getRecipe);

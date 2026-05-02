@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const rateLimit = require("./middleware/rateLimit");
 const recipeRoutes = require("./routes/recipeRoutes");
 
 dotenv.config();
@@ -19,7 +18,7 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use("/recipes", rateLimit, recipeRoutes);
+app.use("/recipes", recipeRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found." });

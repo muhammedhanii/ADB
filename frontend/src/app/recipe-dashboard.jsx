@@ -81,7 +81,9 @@ export default function RecipeDashboard({ initialRecipes, apiBaseUrl }) {
       geometry.dispose();
       material.dispose();
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
