@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const recipeRoutes = require("./routes/recipeRoutes");
+const { connectToDatabase } = require("./DB/connection");
 
 dotenv.config();
 
@@ -24,8 +24,7 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found." });
 });
 
-mongoose
-  .connect(MONGO_URI)
+connectToDatabase(MONGO_URI)
   .then(() => {
     console.log("MongoDB connected.");
     app.listen(PORT, () => {
