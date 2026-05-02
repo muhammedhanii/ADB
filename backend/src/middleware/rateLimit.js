@@ -20,8 +20,11 @@ const getClientKey = (req) => {
   return req.ip || req.socket?.remoteAddress || "local";
 };
 
+const getWindowMs = () =>
+  Number(process.env.RATE_LIMIT_WINDOW_MS) || DEFAULT_WINDOW_MS;
+
 const rateLimit = (req, res, next) => {
-  const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || DEFAULT_WINDOW_MS;
+  const windowMs = getWindowMs();
   const maxRequests = Number(process.env.RATE_LIMIT_MAX) || DEFAULT_MAX_REQUESTS;
   const now = Date.now();
   const key = getClientKey(req);
@@ -47,7 +50,8 @@ const rateLimit = (req, res, next) => {
 };
 
 setInterval(() => {
-  cleanupExpiredEntries(Date.now(), DEFAULT_WINDOW_MS);
-}, DEFAULT_WINDOW_MS).unref();
+  const windowMs = getWindowMs();
+  cleanupExpiredEntries(Date.now(), windowMs);
+}, getWindowMs()).unref();
 
 module.exports = rateLimit;

@@ -10,12 +10,10 @@ const {
 
 const router = express.Router();
 
-router.use(rateLimit);
-
-router.get("/", listRecipes);
-router.get("/:id", getRecipe);
-router.post("/", createRecipe);
-router.put("/:id", updateRecipe);
-router.delete("/:id", deleteRecipe);
+router.get("/", rateLimit, listRecipes);
+router.get("/:id", rateLimit, getRecipe);
+router.post("/", rateLimit, createRecipe);
+router.put("/:id", rateLimit, updateRecipe);
+router.delete("/:id", rateLimit, deleteRecipe);
 
 module.exports = router;

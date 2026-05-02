@@ -13,7 +13,7 @@ const buildSearchQuery = (term) => {
     return {};
   }
 
-  const safeTerm = escapeRegex(trimmedTerm.slice(0, 100));
+  const safeTerm = escapeRegex(trimmedTerm);
   const regex = new RegExp(safeTerm, "i");
   return {
     $or: [{ title: regex }, { description: regex }, { category: regex }],
@@ -57,11 +57,19 @@ const formatValidationError = (error) =>
 
 const listRecipes = async (req, res) => {
   try {
-    const query = buildSearchQuery(req.query.search);
+    const searchTerm =
+      typeof req.query.search === "string" ? req.query.search.trim() : "";
+    if (searchTerm.length > 100) {
+      return res.status(400).json({
+        message: "Search term too long (max 100 characters).",
+      });
+    }
+
+    const query = buildSearchQuery(searchTerm);
     const recipes = await Recipe.find(query).sort({ createdAt: -1 });
     return res.json(recipes);
   } catch (error) {
-    console.error("Failed to fetch recipes:", error);
+    console.error("Failed to fetch recipes:", error.message);
     return res.status(500).json({
       message: "Failed to fetch recipes.",
       details: error.message,
