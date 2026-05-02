@@ -23,11 +23,15 @@ const loadSampleRecipes = async () => {
 };
 
 const isSeedingDisabled = () => {
-  if (process.env.SEED_SAMPLE_DATA === undefined) {
+  const rawValue = process.env.SEED_SAMPLE_DATA;
+  if (rawValue === undefined) {
     return false;
   }
 
-  const normalized = process.env.SEED_SAMPLE_DATA.trim().toLowerCase();
+  const normalized = rawValue.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
   return ["false", "0", "no", "off"].includes(normalized);
 };
 

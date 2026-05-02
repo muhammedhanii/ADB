@@ -34,7 +34,7 @@ connectToDatabase(MONGO_URI)
         console.log(`Seeded ${result.count} sample recipes.`);
       }
     } catch (error) {
-      console.error("Failed to seed sample recipes:", error.message);
+      console.error("Failed to seed sample recipes:", error);
     }
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}.`);
